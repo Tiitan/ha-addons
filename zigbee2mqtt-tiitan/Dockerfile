@@ -1,0 +1,27 @@
+ARG BUILD_FROM
+FROM $BUILD_FROM
+
+# Add env
+ENV LANG C.UTF-8
+
+ENV ZIGBEE2MQTT_VERSION=1.14.0
+ENV ARCHIVE=zigbee2mqtt-$ZIGBEE2MQTT_VERSION
+
+RUN apk add --update --no-cache \
+    jq nodejs nodejs-npm socat \
+    make gcc g++ linux-headers udev git python2 && \
+  git clone -b dev --single-branch --depth 1 https://github.com/Tiitan/zigbee2mqtt.git /app && \
+  cd /app && \
+  echo "Installed zigbee2mqtt @ version $(eval git rev-parse --short HEAD)" && \
+  npm install --unsafe-perm -g pm2 && \
+  npm install --unsafe-perm && \
+  apk del make gcc g++ linux-headers git python2 && \
+  rm -rf /app/docs /app/test /app/images /app/scripts /app/data /app/docker /app/LICENSE /app/README.md /app/update.sh
+
+COPY run.sh "/$ARCHIVE/run.sh"
+COPY socat.sh "/$ARCHIVE/socat.sh"
+WORKDIR "/$ARCHIVE"
+
+RUN ["chmod", "a+x", "./socat.sh"]
+RUN ["chmod", "a+x", "./run.sh"]
+CMD [ "./run.sh" ]
